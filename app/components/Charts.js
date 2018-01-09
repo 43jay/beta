@@ -346,16 +346,13 @@ class Charts extends Component {
     };
     return (
       <div>
-
-      <Assets />
-
-        <div className="dash-chart-panel top-20">
+        <div className="dash-chart-panel">
           <div className="row">
             <div className="col-xs-12">
               <Line
                 data={data}
                 width={600}
-                height={280}
+                height={380}
                 options={{
                   maintainAspectRatio: true,
                   layout: { padding: { left: 0, right: 0, top: 0, bottom: 0 } },

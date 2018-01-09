@@ -1,17 +1,22 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { Link } from "react-router";
-import { doSendAsset, verifyAddress } from "neon-js";
-import Neon, { wallet, api } from "@cityofzion/neon-js";
+import axios from "axios";
 import Modal from "react-bootstrap-modal";
 import QRCode from "qrcode.react";
 import { clipboard } from "electron";
-import axios from "axios";
 import SplitPane from "react-split-pane";
 import numeral from "numeral";
 import ReactTooltip from "react-tooltip";
+
+import { doSendAsset, verifyAddress } from "neon-js";
+import Neon, { wallet, api } from "@cityofzion/neon-js";
+
+import { initiateGetBalance, intervals } from "../components/NetworkSwitch";
+import { resetPrice, setMarketPrice } from "../modules/wallet";
 import { log } from "../util/Logs";
 import ClaimLedgerGas from "./ClaimLedgerGas.js";
+import Dashlogo from "../components/Brand/Dashlogo";
 import { togglePane } from "../modules/dashboard";
 import {
   sendEvent,
@@ -29,6 +34,7 @@ const apiURL = val => {
   return `https://min-api.cryptocompare.com/data/price?fsym=${val}&tsyms=USD`;
 };
 
+
 // form validators for input fields
 const validateForm = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) => {
   // check for valid address
@@ -38,12 +44,12 @@ const validateForm = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) => {
       sendAddress.value.charAt(0) !== "A"
     ) {
       dispatch(sendEvent(false, "The address you entered was not valid."));
-      setTimeout(() => dispatch(clearTransactionEvent()), 1000);
+      setTimeout(() => dispatch(clearTransactionEvent()), 1500);
       return false;
     }
   } catch (e) {
     dispatch(sendEvent(false, "The address you entered was not valid."));
-    setTimeout(() => dispatch(clearTransactionEvent()), 1000);
+    setTimeout(() => dispatch(clearTransactionEvent()), 1500);
     return false;
   }
   // check for fractional neo
@@ -52,21 +58,21 @@ const validateForm = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) => {
     parseFloat(sendAmount.value) !== parseInt(sendAmount.value)
   ) {
     dispatch(sendEvent(false, "You cannot send fractional amounts of Neo."));
-    setTimeout(() => dispatch(clearTransactionEvent()), 1000);
+    setTimeout(() => dispatch(clearTransactionEvent()), 1500);
     return false;
   } else if (asset === "Neo" && parseInt(sendAmount.value) > ledgerBalanceNeo) {
     // check for value greater than account balance
     dispatch(sendEvent(false, "You do not have enough NEO to send."));
-    setTimeout(() => dispatch(clearTransactionEvent()), 1000);
+    setTimeout(() => dispatch(clearTransactionEvent()), 1500);
     return false;
   } else if (asset === "Gas" && parseFloat(sendAmount.value) > ledgerBalanceGAS) {
     dispatch(sendEvent(false, "You do not have enough GAS to send."));
-    setTimeout(() => dispatch(clearTransactionEvent()), 1000);
+    setTimeout(() => dispatch(clearTransactionEvent()), 1500);
     return false;
   } else if (parseFloat(sendAmount.value) < 0) {
     // check for negative asset
     dispatch(sendEvent(false, "You cannot send negative amounts of an asset."));
-    setTimeout(() => dispatch(clearTransactionEvent()), 1000);
+    setTimeout(() => dispatch(clearTransactionEvent()), 1500);
     return false;
   }
   return true;
@@ -83,7 +89,7 @@ const openAndValidate = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) =>
 const sendTransaction = (
   dispatch,
   net,
-  selfAddress,
+  LedgerAddress,
   wif,
   asset,
   ledgerBalanceNeo,
@@ -92,7 +98,7 @@ const sendTransaction = (
   // validate fields again for good measure (might have changed?)
   if (validateForm(dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) === true) {
     dispatch(sendEvent(true, "Processing..."));
-    log(net, "SEND", selfAddress, {
+    log(net, "SEND", LedgerAddress, {
       to: sendAddress.value,
       asset: asset,
       amount: sendAmount.value
@@ -132,6 +138,7 @@ class LoginLedgerNanoS extends Component {
       neo: 0,
       neo_usd: 0,
       gas_usd: 0,
+      gasPrice: 0,
       value: 0,
       inputEnabled: true,
       ledgerAddress: "No Address Found. Click to Refresh",
@@ -151,7 +158,7 @@ class LoginLedgerNanoS extends Component {
     let gas = await axios.get(apiURL("GAS"));
     neo = neo.data.USD;
     gas = gas.data.USD;
-    this.setState({ neo: neo, gas: gas, rpx: rpx });
+    this.setState({ neo: neo, gas: gas });
   }
 
   async getLedgerAddress() {
@@ -296,12 +303,62 @@ class LoginLedgerNanoS extends Component {
 
     return (
       <div>
+      <div id="mainNav" className="main-nav">
+        <div className="navbar navbar-inverse">
+          <div className="navbar-header">
+            <div
+              className="logoContainer"
+            >
+              <Dashlogo width={85} />
+            </div>
+            <div
+              id="balance"
+            >
+              $0.00
+              <span className="bal-usd">USD</span>
+              <span className="comb-bal">Available Balance</span>
+            </div>
+
+          </div>
+          <div className="clearfix" />
+          <hr className="dash-hr" />
+          <div className="navbar-collapse collapse">
+            <ul className="nav navbar-nav">
+              <li>
+                <Link to={"/LoginLedgerNanoS"} activeClassName="active">
+                  <span className="glyphicon glyphicon-th-large" /> Ledger Nano S
+                </Link>
+              </li>
+              <li>
+                <Link to={"/TransactionLedger"} activeClassName="active">
+                  <span className="glyphicon glyphicon-list-alt" /> History
+                </Link>
+              </li>
+              <li>
+                <Link to={"/"} activeClassName="active">
+                  <span className="glyphicon glyphicon-question-sign" /> Help
+                </Link>
+              </li>
+              <li>
+                <Link to={"/"} activeClassName="active">
+                  <span className="glyphicon glyphicon-circle-arrow-left" /> Return to Login
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <span className="dashnetwork">Network: {this.props.net}</span>
+        <div className="copyright">&copy; Copyright 2018 Morpheus</div>
+      </div>
+
+      <div className="ledger-dash-layout">
 
         <div className="ledger-header">
 
           <div className="col-xs-5">
             <p className="market-price center">
-              NEO {numeral(this.props.neoPrice).format("$0,0.00")}
+              NEO {numeral(this.props.marketNeoPrice).format("$0,0.00")}
             </p>
             <p className="neo-text">
               {this.state.ledgerBalanceNeo} <span>NEO</span>
@@ -316,7 +373,7 @@ class LoginLedgerNanoS extends Component {
 
           <div className="col-xs-5 top-5">
             <p className="market-price center">
-              GAS {numeral(this.props.gasPrice).format("$0,0.00")}
+              GAS {numeral(this.props.marketGasPrice).format("$0,0.00")}
             </p>
             <p className="gas-text">
               {Math.floor(this.state.ledgerBalanceGas * 10000000) / 10000000}{" "}
@@ -350,113 +407,13 @@ class LoginLedgerNanoS extends Component {
             <span>Click to Load Ledger Nano S</span>
           </ReactTooltip>
 
-          {ledgerAvailable ? (
             <div className="row ledger-login-panel fadeInDown">
 
-              <div className="col-xs-9">
-                <h4>Ledger Nano S Transaction History</h4>
-              </div>
-
-
-              <div className="col-xs-3 center top-10 send-info"
-              onClick={() =>
-            refreshBalance(
-              this.props.dispatch,
-              this.props.net,
-              this.props.address
-            )}
-              >
-            <span className="glyphicon glyphicon-refresh marg-right-5"/>  Block: {this.props.blockHeight}
-              </div>
-
-
-              <div className="clearboth" />
-
-              <div className="col-xs-12 center">
-                <hr className="dash-hr-wide" />
-
-                <ul id="transactionList top-20">
-
-                </ul>
-
-
-              </div>
-
-              <div className="clearboth" />
+            Ledger Nano S Transaction Hisotry
 
             </div>
 
-
-
-
-          ) : (
-            <div />
-          )}
-
-          <div className="top-30 center send-notice">
-            <p>
-              Please ensure that your Ledger Nano S is plugged in, unlocked and
-              has the NEO app installed. Once plugged in your NEO address from your Ledger Nano S should appear above. <strong> If not please click on Ledger to refresh.</strong> Ledger is a trademark of Ledger SAS, Paris, France. All original owner Copyright and Trademark laws apply.
-            </p>
-
-        </div>
-
-      {ledgerAvailable ? (
-
-      <div className="ledger-login-controls">
-
-      <div className="col-xs-1 center">
-        <Link to="/LoginLedgerNanoS">
-          <div className="dash-icon-bar">
-            <div className="ledger-icons">
-              <span className="glyphicon glyphicon-arrow-left" />
-            </div>
-            Back
-          </div>
-        </Link>
-      </div>
-
-      <div className="col-xs-1 center">
-          <div className="dash-icon-bar"
-          onClick={() => {
-            this.getLedgerAddress();
-          }}
-          >
-            <div className="ledger-icons">
-              <span className="glyphicon glyphicon-refresh" />
-            </div>
-            Refresh
-          </div>
-      </div>
-
-      <div className="col-xs-8 center" />
-
-      <div className="col-xs-1 center">
-          <div className="dash-icon-bar"
-          onClick={() => clipboard.writeText(this.state.ledgerAddress)}
-          >{" "}
-            <div className="ledger-icons">
-              <span className="glyphicon glyphicon-duplicate" />
-            </div>
-            Copy
-          </div>
-      </div>
-
-      <div className="col-xs-1 center">
-        <Link to="/TransactionLedger">
-          <div className="dash-icon-bar">
-            <div className="ledger-icons">
-              <span className="glyphicon glyphicon-list-alt" />
-            </div>
-            History
-          </div>
-        </Link>
-      </div>
-
-      </div>
-    ) : (
-      <div />
-    )}
+    </div>
 
 
       </div>
@@ -465,7 +422,6 @@ class LoginLedgerNanoS extends Component {
 }
 
 const mapStateToProps = state => ({
-  wif: state.account.wif,
   ledgerNanoSGetInfoAsync: state.account.ledgerNanoSGetInfoAsync,
   address: state.account.ledgerAddress,
   net: state.metadata.network,
@@ -473,7 +429,10 @@ const mapStateToProps = state => ({
   gas: state.wallet.Gas,
   selectedAsset: state.transactions.selectedAsset,
   confirmPane: state.dashboard.confirmPane,
-  blockHeight: state.metadata.blockHeight
+  price: state.wallet.price,
+  gasPrice: state.wallet.gasPrice,
+  marketGASPrice: state.wallet.marketGASPrice,
+  marketNEOPrice: state.wallet.marketNEOPrice
 });
 
 LoginLedgerNanoS = connect(mapStateToProps)(LoginLedgerNanoS);

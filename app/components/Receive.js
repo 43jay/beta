@@ -32,7 +32,6 @@ class Receive extends Component {
     return (
       <div id="send" className="">
         <TopBar />
-        <Assets />
         <div className="dash-chart-panel">
         <div className="row">
         <div className="col-xs-12">

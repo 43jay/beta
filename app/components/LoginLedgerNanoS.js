@@ -432,7 +432,7 @@ class LoginLedgerNanoS extends Component {
                 placeholder={this.state.ledgerAddress}
                 value={this.state.ledgerAddress}
               />
-              
+
               </div>
 
 
@@ -447,13 +447,15 @@ class LoginLedgerNanoS extends Component {
               <div className="row top-20" />
               <div className="clearboth" />
 
-              <div className="col-xs-4 top-10">
+              <div className="col-xs-4">
                 <div className="ledgerQRBox center animated fadeInDown">
                   <QRCode size={120} value={this.state.ledgerAddress} />
                 </div>
               </div>
 
               <div className="col-xs-8">
+              <h4 className="zero-margin">Send NEO/GAS from Ledger Nano S</h4>
+              <div className="top-10">
               <input
                 className={formClass}
                 id="center"
@@ -463,9 +465,10 @@ class LoginLedgerNanoS extends Component {
                 }}
               />
               </div>
+              </div>
 
               <div className="col-xs-4  top-10">
-                Amount to Transfer
+                Amount to Send in NEO/GAS
                 <input
                   className={formClass}
                   type="number"
@@ -547,7 +550,7 @@ class LoginLedgerNanoS extends Component {
                       confirmButton = node;
                     }}
                   >
-                    <span className="glyphicon glyphicon-save" /> Send
+                    <span className="glyphicon glyphicon-send" /> Send
                   </button>
                 </div>
               </div>
@@ -561,7 +564,7 @@ class LoginLedgerNanoS extends Component {
             <div />
           )}
 
-          <div className="top-30 center send-notice">
+          <div className="top-10 center send-notice">
             <p>
               Please ensure that your Ledger Nano S is plugged in, unlocked and
               has the NEO app installed. Once plugged in your NEO address from your Ledger Nano S should appear above. <strong> If not please click on Ledger to refresh.</strong> Ledger is a trademark of Ledger SAS, Paris, France. All original owner Copyright and Trademark laws apply.

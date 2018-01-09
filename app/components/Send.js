@@ -216,7 +216,6 @@ class Send extends Component {
     return (
         <div>
           <TopBar />
-          <Assets />
 <div id="sendPane">
 
           <div className="row dash-chart-panel">
