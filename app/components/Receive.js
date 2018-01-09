@@ -42,7 +42,7 @@ class Receive extends Component {
           className="neo-logo logobounce"
         />
         <h3 className="rec-h3">
-          Receive NEO/GAS and other NEP tokens</h3>
+          Receive NEO/GAS</h3>
         </div>
         <hr className="dash-hr-wide" />
         <div className="clearboth" />
