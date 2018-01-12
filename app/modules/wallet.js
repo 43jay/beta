@@ -3,6 +3,7 @@ export const SET_BALANCE = "SET_BALANCE";
 export const SET_MARKET_PRICE = "SET_MARKET_PRICE";
 export const RESET_PRICE = "RESET_PRICE";
 export const SET_TRANSACTION_HISTORY = "SET_TRANSACTION_HISTORY";
+export const SET_COMBINED_BALANCE = "SET_COMBINED_BALANCE";
 
 // Actions
 export function setBalance(
@@ -29,6 +30,13 @@ export function setBalance(
     marketRPXPrice: marketRPXPrice,
     marketDBCPrice: marketDBCPrice,
     marketQLCPrice: marketQLCPrice
+  };
+}
+
+export function setCombinedBalance(combinedBalance) {
+  return {
+    type: SET_COMBINED_BALANCE,
+    combined: combinedBalance
   };
 }
 
@@ -83,6 +91,8 @@ export default (
       };
     case RESET_PRICE:
       return { ...state, price: "--" };
+    case SET_COMBINED_BALANCE:
+      return { ...state, combined: action.combined };
     case SET_MARKET_PRICE: //current market price action type
       let currentPrice;
       if (action.price !== undefined) {

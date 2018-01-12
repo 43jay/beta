@@ -33,7 +33,7 @@ export function setBlockExplorer(blockExplorer) {
 
 // reducer for metadata associated with Neon
 export default (
-  state = { blockHeight: 0, network: "MainNet", blockExplorer: "Neotracker" },
+  state = { blockHeight: 0, network: "TestNet", blockExplorer: "Neotracker" },
   action
 ) => {
   switch (action.type) {

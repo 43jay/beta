@@ -26,6 +26,68 @@ export function disableClaim(status) {
   };
 }
 
+export const doGasClaim = () => async (dispatch, getState) => {
+  const state = getState();
+  const wif = getWIF(state);
+  const address = getAddress(state);
+  const net = getNetwork(state);
+  const NEO = getNEO(state);
+  const signingFunction = getSigningFunction(state);
+  const publicKey = getPublicKey(state);
+  const isHardwareClaim = getIsHardwareLogin(state);
+
+  // if no NEO in account, no need to send to self first
+  if (NEO === 0) {
+    return dispatch(doClaimNotify());
+  } else {
+    dispatch(
+      showInfoNotification({
+        message: "Sending NEO to Yourself...",
+        autoDismiss: 0
+      })
+    );
+    log(net, "SEND", address, { to: address, amount: NEO, asset: ASSETS.NEO });
+
+    let sendAssetFn;
+    if (isHardwareClaim) {
+      dispatch(
+        showInfoNotification({
+          message:
+            "Sign transaction 1 of 2 to claim GAS on your hardware device (sending NEO to yourself)",
+          autoDismiss: 0
+        })
+      );
+      sendAssetFn = () =>
+        api.neonDB.doSendAsset(
+          net,
+          address,
+          publicKey,
+          { [ASSETS.NEO]: NEO },
+          signingFunction
+        );
+    } else {
+      sendAssetFn = () =>
+        api.neonDB.doSendAsset(net, address, wif, { [ASSETS.NEO]: NEO }, null);
+    }
+
+    const [err, response] = await asyncWrap(sendAssetFn());
+    if (err || response.result === undefined || response.result === false) {
+      return dispatch(
+        showErrorNotification({ message: "Transaction failed!" })
+      );
+    } else {
+      dispatch(
+        showInfoNotification({
+          message: "Waiting for transaction to clear...",
+          autoDismiss: 0
+        })
+      );
+      dispatch(setClaimRequest(true));
+      return dispatch(disableClaim(true));
+    }
+  }
+};
+
 // Reducer for managing claims data
 export default (
   state = {

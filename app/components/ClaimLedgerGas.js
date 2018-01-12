@@ -5,7 +5,7 @@ import { sendEvent, clearTransactionEvent } from "../modules/transactions";
 import { doClaimAllGas, doSendAsset } from "neon-js";
 import ReactTooltip from "react-tooltip";
 import { log } from "../util/Logs";
-import { getIsHardwareLogin } from "../modules/account"
+import { getIsHardwareLogin } from "../modules/account";
 
 // wrap claiming with notifications
 
@@ -25,6 +25,44 @@ const doClaimNotify = (dispatch, net, selfAddress, wif) => {
     }
     setTimeout(() => dispatch(clearTransactionEvent()), 5000);
   });
+};
+
+const doGasClaimLedger = () => async (dispatch, getState) => {
+  const address = getAddress(state);
+  const net = getNetwork(state);
+  const NEO = getNEO(state);
+  const signingFunction = getSigningFunction(state);
+  const publicKey = getPublicKey(state);
+  const isHardwareClaim = getIsHardwareLogin(state);
+
+  // if no NEO in account, no need to send to self first
+  if (NEO === 0) {
+    return dispatch(doClaimNotify());
+  } else {
+    dispatch(sendEvent(true, "Sending 0 Neo in order to claim your GAS..."));
+    let sendAssetFn;
+    if (isHardwareClaim) {
+      dispatch(sendEvent(true, "Sending 0 Neo in order to claim your GAS..."));
+      sendAssetFn = () =>
+        api.neonDB.doSendAsset(
+          net,
+          address,
+          publicKey,
+          { [ASSETS.NEO]: NEO },
+          signingFunction
+        );
+    }
+    const [err, response] = await asyncWrap(sendAssetFn());
+    if (err || response.result === undefined || response.result === false) {
+      return dispatch(
+        sendEvent(false, "Oops! Transaction failed. Please try again.")
+      );
+    } else {
+      dispatch(sendEvent(true, "Waiting for the transaction to clear..."));
+      dispatch(setClaimRequest(true));
+      return dispatch(disableClaim(true));
+    }
+  }
 };
 
 // To initiate claim, first send zero Neo to own address, the set claimRequest state

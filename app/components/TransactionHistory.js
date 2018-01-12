@@ -58,18 +58,21 @@ class TransactionHistory extends Component {
           <div className="col-xs-9">
             <h2>Transaction History</h2>
           </div>
-          <div className="col-xs-3 center top-10 send-info"
-          onClick={() =>
-        refreshBalance(
-          this.props.dispatch,
-          this.props.net,
-          this.props.address
-        )}
+          <div
+            className="col-xs-3 center top-10 send-info"
+            onClick={() =>
+              refreshBalance(
+                this.props.dispatch,
+                this.props.net,
+                this.props.address
+              )
+            }
           >
-        <span className="glyphicon glyphicon-refresh marg-right-5"/>  Block: {this.props.blockHeight}
+            <span className="glyphicon glyphicon-refresh marg-right-5" /> Block:{" "}
+            {this.props.blockHeight}
           </div>
           <div className="col-xs-12">
-          <hr className="dash-hr-wide" />
+            <hr className="dash-hr-wide" />
           </div>
           <ul id="transactionList">
             {this.props.transactions.map(t => {
@@ -92,7 +95,7 @@ class TransactionHistory extends Component {
                     }
                   >
                     <span className="glyphicon glyphicon-link marg-right-5" />
-                    {t.txid.substring(0, 64)} {" "}
+                    {t.txid.substring(0, 64)}{" "}
                   </div>
                   <div className="col-xs-3 center font-16">
                     {formatAmount} {t.type}

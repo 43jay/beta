@@ -1,8 +1,10 @@
 import { getAccountsFromWIFKey } from "neon-js";
+import { ledgerNanoSCreateSignatureAsync } from "../modules/ledger/ledgerNanoS";
 
 // Constants
 export const LOGIN = "LOGIN";
 export const LOGOUT = "LOGOUT";
+export const SET_ADDRESS = "SET_ADDRESS";
 export const SET_DECRYPTING = "SET_DECRYPTING";
 export const SET_KEYS = "SET_KEYS";
 export const FINDING_LEDGER_NOTICE =
@@ -35,6 +37,13 @@ export function isHardwareLogin(isHardwareLogin) {
   return {
     type: HARDWARE_LOGIN,
     payload: { isHardwareLogin }
+  };
+}
+
+export function ledgerNanoSGetLogin() {
+  return {
+    type: LOGIN,
+    payload: { signingFunction: ledgerNanoSCreateSignatureAsync }
   };
 }
 
@@ -149,6 +158,13 @@ export function setKeys(keys) {
   };
 }
 
+export function setAddress(address) {
+  return {
+    type: SET_ADDRESS,
+    address: address
+  };
+}
+
 // Reducer that manages account state (account now = private key)
 export default (
   state = {
@@ -190,6 +206,12 @@ export default (
         address: null,
         loggedIn: false,
         decrypting: false
+      };
+    case SET_ADDRESS:
+      return {
+        ...state,
+        wif: null,
+        address: action.address
       };
     case SET_DECRYPTING:
       return { ...state, decrypting: action.state };

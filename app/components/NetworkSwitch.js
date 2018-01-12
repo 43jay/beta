@@ -57,13 +57,12 @@ const getMarketPrice = async () => {
   }
 };
 
-// TODO: this is being imported by Balance.js, maybe refactor to helper file
+// TODO: this is being imported by Balance.js, maybe refactor to helper file/
 
 const initiateGetBalance = (dispatch, net, address) => {
   syncTransactionHistory(dispatch, net, address);
   syncAvailableClaim(dispatch, net, address);
   syncBlockHeight(dispatch, net);
-  // checkVersion(dispatch, net);
   return getBalance(net, address)
     .then(resultBalance => {
       return getMarketPriceUSD(resultBalance.Neo)

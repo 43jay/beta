@@ -19,7 +19,9 @@ import {
   clearTransactionEvent,
   toggleAsset
 } from "../modules/transactions";
+import { setCombinedBalance } from "../modules/wallet";
 import commNode from "../modules/ledger/ledger-comm-node";
+import { setAddress } from "../modules/account";
 
 const BIP44_PATH =
   "8000002C" + "80000378" + "80000000" + "00000000" + "00000000";
@@ -60,7 +62,10 @@ const validateForm = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) => {
     dispatch(sendEvent(false, "You do not have enough NEO to send."));
     setTimeout(() => dispatch(clearTransactionEvent()), 1000);
     return false;
-  } else if (asset === "Gas" && parseFloat(sendAmount.value) > ledgerBalanceGAS) {
+  } else if (
+    asset === "Gas" &&
+    parseFloat(sendAmount.value) > ledgerBalanceGAS
+  ) {
     dispatch(sendEvent(false, "You do not have enough GAS to send."));
     setTimeout(() => dispatch(clearTransactionEvent()), 1000);
     return false;
@@ -74,8 +79,15 @@ const validateForm = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) => {
 };
 
 // open confirm pane and validate fields
-const openAndValidate = (dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) => {
-  if (validateForm(dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) === true) {
+const openAndValidate = (
+  dispatch,
+  ledgerBalanceNeo,
+  ledgerBalanceGAS,
+  asset
+) => {
+  if (
+    validateForm(dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) === true
+  ) {
     dispatch(togglePane("confirmPane"));
   }
 };
@@ -91,7 +103,9 @@ const sendTransaction = (
   ledgerBalanceGAS
 ) => {
   // validate fields again for good measure (might have changed?)
-  if (validateForm(dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) === true) {
+  if (
+    validateForm(dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) === true
+  ) {
     dispatch(sendEvent(true, "Processing..."));
     log(net, "SEND", selfAddress, {
       to: sendAddress.value,
@@ -152,7 +166,7 @@ class LoginLedgerNanoS extends Component {
     let gas = await axios.get(apiURL("GAS"));
     neo = neo.data.USD;
     gas = gas.data.USD;
-    this.setState({ neo: neo, gas: gas, rpx: rpx });
+    this.setState({ neo: neo, gas: gas });
   }
 
   async getLedgerAddress() {
@@ -170,6 +184,8 @@ class LoginLedgerNanoS extends Component {
       );
 
       let loadAccount = new wallet.Account(publicKeyEncoded);
+
+      this.props.dispatch(setAddress(loadAccount.address));
 
       this.setState({
         ledgerAddress: loadAccount.address,
@@ -206,12 +222,13 @@ class LoginLedgerNanoS extends Component {
       { net: net, address: address },
       api.neonDB
     );
+
     this.setState({
       ledgerBalanceNeo: filledBalance.balance.NEO.balance,
       ledgerBalanceGas: filledBalance.balance.GAS.balance
     });
 
-    this.getPrice(
+    await this.getPrice(
       filledBalance.balance.NEO.balance,
       filledBalance.balance.GAS.balance
     );
@@ -238,6 +255,8 @@ class LoginLedgerNanoS extends Component {
       ledgerNEOUSD = neoPrice.data.USD * neo;
 
       this.setState({ ledgerGASUSD, ledgerNEOUSD });
+
+      this.props.dispatch(setCombinedBalance(ledgerGASUSD + ledgerNEOUSD));
     } catch (error) {
       console.log(error);
     }
@@ -297,99 +316,93 @@ class LoginLedgerNanoS extends Component {
 
     return (
       <div>
-      <div id="mainNav" className="main-nav">
-        <div className="navbar navbar-inverse">
-          <div className="navbar-header">
-            <div
-              className="logoContainer"
-            >
-              <Dashlogo width={85} />
+        <div id="mainNav" className="main-nav">
+          <div className="navbar navbar-inverse">
+            <div className="navbar-header">
+              <div className="logoContainer">
+                <Dashlogo width={85} />
+              </div>
+              <div id="balance">
+                {numeral(this.props.combined).format("$0,0.00")}
+                <span className="bal-usd">USD</span>
+                <span className="comb-bal">Available Balance</span>
+              </div>
             </div>
-            <div
-              id="balance"
-            >
-              $0.00
-              <span className="bal-usd">USD</span>
-              <span className="comb-bal">Available Balance</span>
+            <div className="clearfix" />
+            <hr className="dash-hr" />
+            <div className="navbar-collapse collapse">
+              <ul className="nav navbar-nav">
+                <li>
+                  <Link to={"/LoginLedgerNanoS"} activeClassName="active">
+                    <span className="glyphicon glyphicon-th-large" /> Ledger
+                    Nano S
+                  </Link>
+                </li>
+                <li>
+                  <Link to={"/TransactionLedger"} activeClassName="active">
+                    <span className="glyphicon glyphicon-list-alt" /> History
+                  </Link>
+                </li>
+                <li>
+                  <Link to={"/"} activeClassName="active">
+                    <span className="glyphicon glyphicon-question-sign" /> Help
+                  </Link>
+                </li>
+                <li>
+                  <Link to={"/"} activeClassName="active">
+                    <span className="glyphicon glyphicon-chevron-left" /> Return
+                    to Login
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <span className="dashnetwork" />
+          <span className="dashnetwork">Network: {this.props.net}</span>
+          <div className="copyright">&copy; Copyright 2018 Morpheus</div>
+        </div>
+
+        <div className="ledger-dash-layout">
+          <div className="ledger-header">
+            <div className="col-xs-5">
+              <p className="market-price center">
+                NEO {numeral(this.props.neoPrice).format("$0,0.00")}
+              </p>
+              <p className="neo-text">
+                {this.state.ledgerBalanceNeo} <span>NEO</span>
+              </p>
+              <hr className="dash-hr" />
+              <p className="neo-balance">
+                {numeral(this.state.ledgerNEOUSD).format("$0,0.00")} US
+              </p>
             </div>
 
+            <div className="col-xs-2">{<ClaimLedgerGas />}</div>
+
+            <div className="col-xs-5 top-5">
+              <p className="market-price center">
+                GAS {numeral(this.props.gasPrice).format("$0,0.00")}
+              </p>
+              <p className="gas-text">
+                {Math.floor(this.state.ledgerBalanceGas * 10000000) / 10000000}{" "}
+                <span>GAS</span>
+              </p>
+              <hr className="dash-hr" />
+              <p className="neo-balance">
+                {" "}
+                {numeral(this.state.ledgerGASUSD).format("$0,0.00")} USD
+              </p>
+            </div>
           </div>
-          <div className="clearfix" />
-          <hr className="dash-hr" />
-          <div className="navbar-collapse collapse">
-            <ul className="nav navbar-nav">
-              <li>
-                <Link to={"/LoginLedgerNanoS"} activeClassName="active">
-                  <span className="glyphicon glyphicon-th-large" /> Ledger Nano S
-                </Link>
-              </li>
-              <li>
-                <Link to={"/TransactionLedger"} activeClassName="active">
-                  <span className="glyphicon glyphicon-list-alt" /> History
-                </Link>
-              </li>
-              <li>
-                <Link to={"/"} activeClassName="active">
-                  <span className="glyphicon glyphicon-question-sign" /> Help
-                </Link>
-              </li>
-              <li>
-                <Link to={"/"} activeClassName="active">
-                  <span className="glyphicon glyphicon-chevron-left" /> Return to Login
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <span className="dashnetwork"></span>
-        <span className="dashnetwork">Network: {this.props.net}</span>
-        <div className="copyright">&copy; Copyright 2018 Morpheus</div>
-      </div>
-
-      <div className="ledger-dash-layout">
-
-        <div className="ledger-header">
-
-          <div className="col-xs-5">
-            <p className="market-price center">
-              NEO {numeral(this.props.neoPrice).format("$0,0.00")}
-            </p>
-            <p className="neo-text">
-              {this.state.ledgerBalanceNeo} <span>NEO</span>
-            </p>
-            <hr className="dash-hr" />
-            <p className="neo-balance">
-              {numeral(this.state.ledgerNEOUSD).format("$0,0.00")}{" "} US
-            </p>
-          </div>
-
-          <div className="col-xs-2">{<ClaimLedgerGas />}</div>
-
-          <div className="col-xs-5 top-5">
-            <p className="market-price center">
-              GAS {numeral(this.props.gasPrice).format("$0,0.00")}
-            </p>
-            <p className="gas-text">
-              {Math.floor(this.state.ledgerBalanceGas * 10000000) / 10000000}{" "}
-              <span>GAS</span>
-            </p>
-            <hr className="dash-hr" />
-            <p className="neo-balance">
-              {" "}
-              {numeral(this.state.ledgerGASUSD).format("$0,0.00")}{" "}
-              USD
-            </p>
-          </div>
-
-        </div>
 
           <div
-          onClick={() => {
-            this.getLedgerAddress();
-          }}
-          data-tip
-          data-for="refreshTip"
-          className="ledger-nanos animated fadeInUp" />
+            onClick={() => {
+              this.getLedgerAddress();
+            }}
+            data-tip
+            data-for="refreshTip"
+            className="ledger-nanos animated fadeInUp"
+          />
 
           <ReactTooltip
             className="solidTip"
@@ -403,16 +416,16 @@ class LoginLedgerNanoS extends Component {
 
           {ledgerAvailable ? (
             <div className="row ledger-login-panel fadeInDown">
-
               <div className="col-xs-4 center">
                 <h4
-                data-tip
-                data-for="copyTip"
-                className="pointer"
-                onClick={() => clipboard.writeText(this.state.ledgerAddress)}
-                >Copy Ledger Address</h4>{" "}
+                  data-tip
+                  data-for="copyTip"
+                  className="pointer"
+                  onClick={() => clipboard.writeText(this.state.ledgerAddress)}
+                >
+                  Copy Ledger Address
+                </h4>{" "}
               </div>{" "}
-
               <ReactTooltip
                 className="solidTip"
                 id="copyTip"
@@ -422,51 +435,40 @@ class LoginLedgerNanoS extends Component {
               >
                 <span>Copy Ledger Nano S NEO Address</span>
               </ReactTooltip>
-
               <div className="col-xs-8">
-
-              <input
-                className="ledger-address"
-                onClick={() => clipboard.writeText(this.props.ledgerAddress)}
-                id="center"
-                placeholder={this.state.ledgerAddress}
-                value={this.state.ledgerAddress}
-              />
-
+                <input
+                  className="ledger-address"
+                  onClick={() => clipboard.writeText(this.props.ledgerAddress)}
+                  id="center"
+                  placeholder={this.state.ledgerAddress}
+                  value={this.state.ledgerAddress}
+                />
               </div>
-
-
               <div className="clearboth" />
-
               <div className="col-xs-12 center">
                 <hr className="dash-hr-wide" />
               </div>
-
-
               <div className="clearboth" />
               <div className="row top-20" />
               <div className="clearboth" />
-
               <div className="col-xs-4">
                 <div className="ledgerQRBox center animated fadeInDown">
                   <QRCode size={120} value={this.state.ledgerAddress} />
                 </div>
               </div>
-
               <div className="col-xs-8">
-              <h4 className="zero-margin">Send NEO/GAS from Ledger Nano S</h4>
-              <div className="top-10">
-              <input
-                className={formClass}
-                id="center"
-                placeholder="Enter a valid NEO public address here"
-                ref={node => {
-                  sendAddress = node;
-                }}
-              />
+                <h4 className="zero-margin">Send NEO/GAS from Ledger Nano S</h4>
+                <div className="top-10">
+                  <input
+                    className={formClass}
+                    id="center"
+                    placeholder="Enter a valid NEO public address here"
+                    ref={node => {
+                      sendAddress = node;
+                    }}
+                  />
+                </div>
               </div>
-              </div>
-
               <div className="col-xs-4  top-10">
                 Amount to Send in NEO/GAS
                 <input
@@ -482,7 +484,6 @@ class LoginLedgerNanoS extends Component {
                   }}
                 />
               </div>
-
               <div className="col-xs-4 top-10">
                 Value in USD
                 <input
@@ -496,11 +497,8 @@ class LoginLedgerNanoS extends Component {
                 />
                 <label className="amount-dollar-ledger">$</label>
               </div>
-
               <div className="col-xs-4 top-10">
-
                 <div id="sendAddress">
-
                   <div
                     id="sendAsset"
                     className={btnClass}
@@ -526,9 +524,7 @@ class LoginLedgerNanoS extends Component {
                     <span>Click to switch between NEO and GAS</span>
                   </ReactTooltip>
                 </div>
-
               </div>
-
               <div className="col-xs-4 top-10">
                 <div id="sendAddress">
                   <button
@@ -554,12 +550,7 @@ class LoginLedgerNanoS extends Component {
                   </button>
                 </div>
               </div>
-
             </div>
-
-
-
-
           ) : (
             <div />
           )}
@@ -567,14 +558,14 @@ class LoginLedgerNanoS extends Component {
           <div className="top-10 center send-notice">
             <p>
               Please ensure that your Ledger Nano S is plugged in, unlocked and
-              has the NEO app installed. Once plugged in your NEO address from your Ledger Nano S should appear above. <strong> If not please click on Ledger to refresh.</strong> Ledger is a trademark of Ledger SAS, Paris, France. All original owner Copyright and Trademark laws apply.
+              has the NEO app installed. Once plugged in your NEO address from
+              your Ledger Nano S should appear above.{" "}
+              <strong> If not please click on Ledger to refresh.</strong> Ledger
+              is a trademark of Ledger SAS, Paris, France. All original owner
+              Copyright and Trademark laws apply.
             </p>
-
+          </div>
         </div>
-
-    </div>
-
-
       </div>
     );
   }
@@ -588,7 +579,8 @@ const mapStateToProps = state => ({
   neo: state.wallet.Neo,
   gas: state.wallet.Gas,
   selectedAsset: state.transactions.selectedAsset,
-  confirmPane: state.dashboard.confirmPane
+  confirmPane: state.dashboard.confirmPane,
+  combined: state.wallet.combined
 });
 
 LoginLedgerNanoS = connect(mapStateToProps)(LoginLedgerNanoS);
