@@ -532,9 +532,7 @@ const mapStateToProps = state => ({
   combined: state.wallet.combined,
   explorer: state.metadata.blockExplorer,
   blockHeight: state.metadata.blockHeight,
-  transactions: state.wallet.transactions,
-  marketGASPrice: state.wallet.marketGASPrice,
-  marketNEOPrice: state.wallet.marketNEOPrice
+  transactions: state.wallet.transactions
 });
 
 LoginLedgerNanoS = connect(mapStateToProps)(LoginLedgerNanoS);
