@@ -93,10 +93,9 @@ const openAndValidate = (
   }
 };
 
-export const sendTransaction = (sendEntries: Array<SendEntryType>) => async (
-  dispatch: DispatchType,
-  getState: GetStateType
-): Promise<*> => {
+export const sendTransactionLedger = (
+  sendEntries: Array<SendEntryType>
+) => async (dispatch: DispatchType, getState: GetStateType): Promise<*> => {
   const state = getState();
   const wif = getWIF(state);
   const fromAddress = getAddress(state);
