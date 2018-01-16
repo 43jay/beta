@@ -4,7 +4,7 @@ import commNode from "./ledger-comm-node";
 import { BIP44_PATH } from "../core/constants";
 import asyncWrap from "../core/asyncHelper";
 
-export const CURRENT_VERSION = 0
+export const CURRENT_VERSION = 0;
 
 export const ledgerNanoSCreateSignatureAsync = async (unsignedTx: string, publicKeyEncoded: string) => {
   const txData = tx.serializeTransaction(unsignedTx)
