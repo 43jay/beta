@@ -10,12 +10,12 @@ import {
   hardwarePublicKeyInfo,
   isHardwareLogin,
   hardwarePublicKey
-} from "../../modules/account";
+} from "../../modules/accountLedger";
 
 import LoginLedgerNanoS from "./LoginLedgerNanoS";
 
 const mapStateToProps = state => ({
-  hardwareDeviceInfo: hardwareDeviceInfo,
+  hardwareDeviceInfo: getHardwareDeviceInfo(state),
   hardwarePublicKeyInfo: hardwarePublicKeyInfo,
   isHardwareLogin: isHardwareLogin,
   hardwarePublicKey: hardwarePublicKey,

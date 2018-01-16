@@ -12,6 +12,11 @@ export const FINDING_LEDGER_NOTICE =
 export const BIP44_PATH =
   "8000002C" + "80000378" + "80000000" + "00000000" + "00000000";
 
+export const HARDWARE_DEVICE_INFO = "HARDWARE_DEVICE_INFO";
+export const HARDWARE_PUBLIC_KEY_INFO = "HARDWARE_PUBLIC_KEY_INFO";
+export const HARDWARE_PUBLIC_KEY = "HARDWARE_PUBLIC_KEY";
+export const HARDWARE_LOGIN = "HARDWARE_LOGIN";
+
 export function hardwareDeviceInfo(hardwareDeviceInfo) {
   return {
     type: HARDWARE_DEVICE_INFO,

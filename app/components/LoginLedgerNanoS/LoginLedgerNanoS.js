@@ -77,10 +77,14 @@ export default class LoginLedgerNanoS extends Component {
   async componentDidMount() {
     // console.log("yooooooooo");
     // console.log(this.props);
+    // await this.props.dispatch(
+    //   this.props.hardwareDeviceInfo(FINDING_LEDGER_NOTICE)
+    // );
     console.log("started");
     console.log(this.props);
     await this.ledgerNanoSGetInfoAsync();
-
+    let test = await this.props.hardwareDeviceInfo();
+    console.log(test);
     console.log("end");
 
     // const intervalId = setInterval(async () => {
@@ -122,7 +126,7 @@ export default class LoginLedgerNanoS extends Component {
   render() {
     const { hardwareDeviceInfo, hardwarePublicKeyInfo, publicKey } = this.props;
 
-    console.log(publicKey);
+    // console.log(publicKey);
     return (
       <div id="loginPage">
         <div>Login using the Ledger Nano S:</div>

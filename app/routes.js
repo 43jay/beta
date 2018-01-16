@@ -7,7 +7,7 @@ import Settings from "./components/Settings";
 import Exchange from "./components/Exchange";
 import ExchangeAddress from "./components/ExchangeAddress";
 import LoginLocalStorage from "./components/LoginLocalStorage";
-import LoginLedgerNanoS from "./components/LoginLedgerNanoS/index";
+import LoginLedgerNanoS from "./components/LoginLedgerNanoS";
 import TransactionLedger from "./components/TransactionLedger";
 import TransactionHistory from "./components/TransactionHistory";
 import DisplayWalletKeys from "./components/DisplayWalletKeys";

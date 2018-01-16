@@ -128,7 +128,6 @@ class Dashboard extends Component {
                 <span className="bal-usd">USD</span>
                 <span className="comb-bal">Available Balance</span>
               </div>
-
             </div>
             <div className="clearfix" />
             <hr className="dash-hr" />

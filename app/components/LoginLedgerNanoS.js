@@ -22,6 +22,7 @@ import {
 import { setCombinedBalance } from "../modules/wallet";
 import commNode from "../modules/ledger/ledger-comm-node";
 import { setAddress } from "../modules/account";
+import { initiateGetBalance } from "./NetworkSwitch";
 
 const BIP44_PATH =
   "8000002C" + "80000378" + "80000000" + "00000000" + "00000000";
@@ -92,6 +93,76 @@ const openAndValidate = (
   }
 };
 
+export const sendTransaction = (sendEntries: Array<SendEntryType>) => async (
+  dispatch: DispatchType,
+  getState: GetStateType
+): Promise<*> => {
+  const state = getState();
+  const wif = getWIF(state);
+  const fromAddress = getAddress(state);
+  const net = getNetwork(state);
+  const balances = getBalances(state);
+  const signingFunction = getSigningFunction(state);
+  const publicKey = getPublicKey(state);
+  const isHardwareSend = getIsHardwareLogin(state);
+
+  const rejectTransaction = (message: string) =>
+    dispatch(showErrorNotification({ message }));
+
+  const error = validateTransactionsBeforeSending(balances, sendEntries);
+
+  if (error) {
+    return rejectTransaction(error);
+  }
+
+  dispatch(
+    showInfoNotification({ message: "Sending Transaction...", autoDismiss: 0 })
+  );
+
+  log(
+    net,
+    "SEND",
+    fromAddress,
+    // $FlowFixMe
+    sendEntries.map(({ address, amount, symbol }) => ({
+      to: address,
+      asset: symbol,
+      amount: parseFloat(amount)
+    }))
+  );
+
+  if (isHardwareSend) {
+    dispatch(
+      showInfoNotification({
+        message: "Please sign the transaction on your hardware device",
+        autoDismiss: 0
+      })
+    );
+  }
+
+  const [err, config] = await asyncWrap(
+    makeRequest(sendEntries, {
+      net,
+      address: fromAddress,
+      publicKey,
+      privateKey: new wallet.Account(wif).privateKey,
+      signingFunction: isHardwareSend ? signingFunction : null
+    })
+  );
+
+  if (err || !config || !config.response || !config.response.result) {
+    console.log(err);
+    return rejectTransaction("Transaction failed!");
+  } else {
+    return dispatch(
+      showSuccessNotification({
+        message:
+          "Transaction complete! Your balance will automatically update when the blockchain has processed it."
+      })
+    );
+  }
+};
+
 // perform send transaction
 const sendTransaction = (
   dispatch,
@@ -106,7 +177,9 @@ const sendTransaction = (
   if (
     validateForm(dispatch, ledgerBalanceNeo, ledgerBalanceGAS, asset) === true
   ) {
-    dispatch(sendEvent(true, "Processing..."));
+    dispatch(
+      sendEvent(true, "Please sign the transaction on your hardware device")
+    );
     log(net, "SEND", selfAddress, {
       to: sendAddress.value,
       asset: asset,
@@ -193,6 +266,13 @@ class LoginLedgerNanoS extends Component {
       });
 
       this.getLedgerBalance(loadAccount.address, this.props.net);
+
+      await initiateGetBalance(
+        this.props.dispatch,
+        this.props.net,
+        loadAccount.address,
+        this.props.price
+      );
 
       return loadAccount.address;
     } catch (error) {

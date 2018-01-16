@@ -27,10 +27,9 @@ const doClaimNotify = (dispatch, net, selfAddress, wif) => {
   });
 };
 
-const doGasClaimLedger = () => async (dispatch, getState) => {
+const doGasClaimLedger = () => async dispatch => {
   const address = getAddress(state);
   const net = getNetwork(state);
-  const NEO = getNEO(state);
   const signingFunction = getSigningFunction(state);
   const publicKey = getPublicKey(state);
   const isHardwareClaim = getIsHardwareLogin(state);
@@ -39,19 +38,24 @@ const doGasClaimLedger = () => async (dispatch, getState) => {
   if (NEO === 0) {
     return dispatch(doClaimNotify());
   } else {
-    dispatch(sendEvent(true, "Sending 0 Neo in order to claim your GAS..."));
+    dispatch(
+      sendEvent(
+        true,
+        "Sign transaction 1 of 2 to claim GAS on your hardware device (sending NEO to yourself)"
+      )
+    );
     let sendAssetFn;
-    if (isHardwareClaim) {
-      dispatch(sendEvent(true, "Sending 0 Neo in order to claim your GAS..."));
-      sendAssetFn = () =>
-        api.neonDB.doSendAsset(
-          net,
-          address,
-          publicKey,
-          { [ASSETS.NEO]: NEO },
-          signingFunction
-        );
-    }
+
+    dispatch(sendEvent(true, "Sending 0 Neo in order to claim your GAS..."));
+    sendAssetFn = () =>
+      api.neonDB.doSendAsset(
+        net,
+        address,
+        publicKey,
+        { [ASSETS.NEO]: "NEO" },
+        signingFunction
+      );
+
     const [err, response] = await asyncWrap(sendAssetFn());
     if (err || response.result === undefined || response.result === false) {
       return dispatch(
@@ -72,7 +76,12 @@ const doGasClaim = (dispatch, net, wif, selfAddress, ans) => {
   if (ans === 0) {
     doClaimNotify(dispatch, net, selfAddress, wif);
   } else {
-    dispatch(sendEvent(true, "Sending 0 Neo in order to claim your GAS..."));
+    dispatch(
+      sendEvent(
+        true,
+        "Sign transaction 1 of 2 to claim GAS on your hardware device (sending NEO to yourself)"
+      )
+    );
     log(net, "SEND", selfAddress, {
       to: selfAddress,
       amount: ans,
