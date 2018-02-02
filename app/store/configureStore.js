@@ -13,7 +13,7 @@ if (process.env.NODE_ENV === "production") {
 } else {
 	enhancer = compose(
 		applyMiddleware(thunk),
-		DevTools.instrument()
+		DevTools.instrument({ maxAge: 50 })
 	);
 }
 
